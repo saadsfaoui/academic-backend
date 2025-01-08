@@ -9,10 +9,9 @@ class EncryptCookies extends Middleware
     /**
      * The names of the cookies that should not be encrypted.
      *
-     * @var array<int, string>
-     */
+     * @var array<int, string>
+     */
     protected $except = [
-        // Ajoutez ici les cookies que vous ne souhaitez pas chiffrer.
+        // Ajoutez ici les cookies à exclure du chiffrement si nécessaire
     ];
 }
-

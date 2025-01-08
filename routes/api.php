@@ -1,67 +1,76 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\SubjectController;
-use App\Http\Controllers\GroupController;
-
-Route::prefix('subjects')->group(function () {
-    Route::get('/', [SubjectController::class, 'index']);       // Récupérer toutes les matières
-    Route::post('/', [SubjectController::class, 'store']);      // Ajouter une matière
-    Route::put('/{id}', [SubjectController::class, 'update']); // Mettre à jour une matière
-    Route::delete('/{id}', [SubjectController::class, 'destroy']); // Supprimer une matière
-});
-/*Route::prefix('groups')->group(function () {
-    Route::get('/', [GroupController::class, 'index']);          // Rechercher ou lister tous les groupes
-    Route::post('/', [GroupController::class, 'store']);         // Ajouter un nouveau groupe
-    Route::post('/join/{id}', [GroupController::class, 'join']); // Rejoindre un groupe
-    
-});*/
 use App\Http\Controllers\AuthController;
-
-Route::prefix('auth')->group(function () {
-    Route::post('register', [AuthController::class, 'register']); // Inscription
-    Route::post('login', [AuthController::class, 'login']);       // Connexion
-    Route::post('logout', [AuthController::class, 'logout'])->middleware('auth:sanctum'); // Déconnexion
-});
-
-Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/groups/search', [GroupController::class, 'searchGroups']); // Rechercher des groupes
-    Route::get('/groups/recommended', [GroupController::class, 'recommendedGroups']); // Groupes recommandés
-    Route::get('/groups/resources', [GroupController::class, 'sharedResources']); // Ressources partagées
-    Route::get('/groups', [GroupController::class, 'listGroups']); // Liste de tous les groupes
-    //Route::post('/groups', [GroupController::class, 'store']); // Créer un groupe
-    Route::post('/groups/join/{id}', [GroupController::class, 'join']); // Rejoindre un groupe
-});
-
-/*use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;*/
-
-
-/*Route::post('/login', function (Request $request) {
-    $credentials = $request->validate([
-        'email' => 'required|email',
-        'password' => 'required',
-    ]);
-
-    if (Auth::attempt($credentials)) {
-        /** @var \App\Models\MyUserModel $user **
-        $user = Auth::user();
-        $token = $user->createToken('API Token')->plainTextToken;
-        
-        return response()->json(['token' => $token], 200);
-    }
-    
-    return response()->json(['message' => 'Invalid credentials'], 401);
-}); */
-
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\GroupController;
+use App\Http\Controllers\RequestController;
+use App\Http\Controllers\AdminController;
+use App\Http\Controllers\SubjectController;
 use App\Http\Controllers\PredictionController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Middleware\CheckAdmin;
+use App\Http\Middleware\CheckBlockedUser;
 
-Route::prefix('predictions')->group(function () {
-    Route::post('/generate', [PredictionController::class, 'generate']); // Générer des prédictions
-    Route::get('/strengths/{studentName}', [PredictionController::class, 'strengths']); // Obtenir les forces d'un étudiant
+/*
+|--------------------------------------------------------------------------
+| API Routes
+|--------------------------------------------------------------------------
+|
+| Here is where you can register API routes for your application. These
+| routes are loaded by the RouteServiceProvider within a group which
+| is assigned the "api" middleware group. Enjoy building your API!
+|
+*/
+
+// Test route
+Route::get('/test', function () {
+    return response()->json(['message' => 'API is working!']);
 });
 
+// Auth routes
+Route::prefix('auth')->group(function () {
+    Route::post('register', [AuthController::class, 'register']);
+    Route::post('login', [AuthController::class, 'login']);
+    Route::post('logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
+});
 
+// Routes protégées pour les utilisateurs et les groupes (admin uniquement)
+Route::middleware(['auth:sanctum', CheckAdmin::class])->group(function () {
+    // Gestion des utilisateurs
+    Route::get('/users', [UserController::class, 'index']);
+    Route::get('/users/{id}', [UserController::class, 'show']);
+    Route::put('/users/{id}', [UserController::class, 'update']);
+    Route::delete('/users/{id}', [UserController::class, 'destroy']);
+    Route::put('/users/{id}/block', [UserController::class, 'blockUser']);
+    Route::put('/users/{id}/unblock', [UserController::class, 'unblockUser']);
+
+    // Gestion des groupes
+    Route::get('/groups', [GroupController::class, 'index']);
+    Route::post('/groups', [GroupController::class, 'store']);
+    Route::post('/groups/{id}/links', [GroupController::class, 'addLinks']);
+    Route::delete('/groups/{id}/links', [GroupController::class, 'removeLink']);
+    Route::delete('/groups/{id}', [GroupController::class, 'destroy']);
+    Route::put('/groups/{id}', [GroupController::class, 'update']);
+
+    // Gestion des requêtes
+    Route::get('/requests', [RequestController::class, 'index']);
+    Route::put('/requests/{id}/approve', [RequestController::class, 'approve']);
+    Route::put('/requests/{id}/reject', [RequestController::class, 'reject']);
+    Route::delete('/requests/{id}', [RequestController::class, 'destroy']);
+
+    // Routes d'administration
+    Route::get('/admin/users/count', [AdminController::class, 'getUserCount']);
+    Route::get('/admin/groups/count', [AdminController::class, 'getGroupCount']);
+    Route::get('/admin/requests/pending/count', [AdminController::class, 'getPendingRequestCount']);
+});
+
+// L'utilisateur peut créer une requête sans être admin
+Route::middleware(['auth:sanctum', CheckBlockedUser::class])->group(function () {
+    Route::post('/requests', [RequestController::class, 'store']);
+});
+
+// Gestion des matières
 Route::middleware('auth:sanctum')->prefix('subjects')->group(function () {
     Route::get('/', [SubjectController::class, 'index']);
     Route::post('/', [SubjectController::class, 'store']);
@@ -69,6 +78,19 @@ Route::middleware('auth:sanctum')->prefix('subjects')->group(function () {
     Route::delete('/{id}', [SubjectController::class, 'destroy']);
 });
 
-use App\Http\Controllers\DashboardController;
+// Gestion des prédictions
+Route::prefix('predictions')->group(function () {
+    Route::post('/generate', [PredictionController::class, 'generate']);
+    Route::get('/strengths/{studentName}', [PredictionController::class, 'strengths']);
+});
 
+// Tableau de bord
 Route::middleware('auth:sanctum')->get('/dashboard', [DashboardController::class, 'index']);
+
+// Gestion des groupes pour les utilisateurs connectés
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/groups/search', [GroupController::class, 'searchGroups']);
+    Route::get('/groups/recommended', [GroupController::class, 'recommendedGroups']);
+    Route::get('/groups/resources', [GroupController::class, 'sharedResources']);
+    Route::post('/groups/join/{id}', [GroupController::class, 'join']);
+});

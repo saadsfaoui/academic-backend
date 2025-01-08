@@ -7,15 +7,9 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
-/**
- * @mixin \Illuminate\Foundation\Auth\User
- * @method \Laravel\Sanctum\NewAccessToken createToken(string $name, array $abilities = ['*'])
- */
- 
-
 class User extends Authenticatable
 {
-    use  HasApiTokens, HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable;
 
     /**
      * The attributes that are mass assignable.
@@ -27,7 +21,7 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
-        'is_blocked'
+        'is_blocked',
     ];
 
     /**
@@ -45,13 +39,20 @@ class User extends Authenticatable
      *
      * @var array<string, string>
      */
-    protected function casts(): array
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'password' => 'hashed',
+        'is_blocked' => 'boolean',
+    ];
+
+    /**
+     * Check if the user is an admin.
+     *
+     * @return bool
+     */
+    public function isAdmin()
     {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-            'is_blocked' => 'boolean',
-        ];
+        return $this->role === 'admin';
     }
 
     /**
@@ -64,14 +65,33 @@ class User extends Authenticatable
         return $this->belongsToMany(Group::class, 'group_user');
     }
 
+    /**
+     * Define the one-to-many relationship with requests.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function requests()
+    {
+        return $this->hasMany(\App\Models\Request::class);
+    }
+
+    /**
+     * Define the one-to-many relationship with subjects.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
     public function subjects()
     {
         return $this->hasMany(Subject::class);
     }
 
+    /**
+     * Define the one-to-many relationship with predictions.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
     public function predictions()
     {
         return $this->hasMany(Prediction::class);
     }
-
 }
