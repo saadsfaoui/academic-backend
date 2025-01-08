@@ -11,10 +11,14 @@ return new class extends Migration {
             $table->id();
             $table->string('name')->unique();
             $table->string('description')->nullable();
+            $table->json('links')->nullable(); // Champ pour les liens
+            $table->unsignedBigInteger('created_by'); // Créateur du groupe (Admin)
             $table->timestamps();
+
+            $table->foreign('created_by')->references('id')->on('users')->onDelete('cascade');
         });
     }
-
+    
     public function down()
     {
         Schema::dropIfExists('groups');

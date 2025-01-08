@@ -10,7 +10,7 @@ class RouteServiceProvider extends ServiceProvider
     /**
      * This namespace is applied to your controller routes.
      *
-     * @var string
+     * @var string|null
      */
     protected $namespace = 'App\Http\Controllers';
 
