@@ -10,10 +10,14 @@ class Kernel extends HttpKernel
      * The application's global HTTP middleware stack.
      *
      * These middleware are run during every request to your application.
+     *
+     * @var array
      */
     protected $middleware = [
-        // Middleware de base de Laravel
+        \App\Http\Middleware\TrustProxies::class,
         \Illuminate\Foundation\Http\Middleware\CheckForMaintenanceMode::class,
+        \Illuminate\Foundation\Http\Middleware\PreventRequestsDuringMaintenance::class, // Middleware de maintenance
+        \Illuminate\Http\Middleware\HandleCors::class, // Middleware CORS
         \Illuminate\Foundation\Http\Middleware\ValidatePostSize::class,
         \App\Http\Middleware\TrimStrings::class,
         \Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull::class,
@@ -21,6 +25,8 @@ class Kernel extends HttpKernel
 
     /**
      * The application's route middleware groups.
+     *
+     * @var array
      */
     protected $middlewareGroups = [
         'web' => [
@@ -33,8 +39,8 @@ class Kernel extends HttpKernel
         ],
 
         'api' => [
-            // Middleware pour Laravel Sanctum
             \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
+            \Illuminate\Http\Middleware\HandleCors::class, // Middleware CORS
             'throttle:api',
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
         ],
@@ -44,10 +50,13 @@ class Kernel extends HttpKernel
      * The application's route middleware.
      *
      * These middleware may be assigned to groups or used individually.
+     *
+     * @var array
      */
     protected $routeMiddleware = [
         'auth' => \App\Http\Middleware\Authenticate::class,
         'auth.basic' => \Illuminate\Auth\Middleware\AuthenticateWithBasicAuth::class,
+        'auth.session' => \Illuminate\Session\Middleware\AuthenticateSession::class,
         'cache.headers' => \Illuminate\Http\Middleware\SetCacheHeaders::class,
         'can' => \Illuminate\Auth\Middleware\Authorize::class,
         'guest' => \App\Http\Middleware\RedirectIfAuthenticated::class,
@@ -55,8 +64,7 @@ class Kernel extends HttpKernel
         'signed' => \Illuminate\Routing\Middleware\ValidateSignature::class,
         'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
-        'check.blocked' => \App\Http\Middleware\CheckBlockedUser::class,
-        'admin' => \App\Http\Middleware\CheckAdmin::class, // Nouveau
-
+        'check.blocked' => \App\Http\Middleware\CheckBlockedUser::class, // Middleware pour vérifier si un utilisateur est bloqué
+        'admin' => \App\Http\Middleware\CheckAdmin::class, // Middleware pour vérifier si l'utilisateur est admin
     ];
 }

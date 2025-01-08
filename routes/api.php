@@ -6,8 +6,12 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\GroupController;
 use App\Http\Controllers\RequestController;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\SubjectController;
+use App\Http\Controllers\PredictionController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Middleware\CheckAdmin;
 use App\Http\Middleware\CheckBlockedUser;
+
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -25,13 +29,15 @@ Route::get('/test', function () {
 });
 
 // Auth routes
-Route::post('/auth/register', [AuthController::class, 'register']);
-Route::post('/auth/login', [AuthController::class, 'login']);
-Route::post('/auth/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
+Route::prefix('auth')->group(function () {
+    Route::post('register', [AuthController::class, 'register']);
+    Route::post('login', [AuthController::class, 'login']);
+    Route::post('logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
+});
 
-// Routes protégées pour les utilisateurs et les groupes
-Route::group(['middleware' => ['auth:sanctum', CheckAdmin::class]], function () {
-    // Gestion des utilisateurs (seulement pour admin)
+// Routes protégées pour les utilisateurs et les groupes (admin uniquement)
+Route::middleware(['auth:sanctum', CheckAdmin::class])->group(function () {
+    // Gestion des utilisateurs
     Route::get('/users', [UserController::class, 'index']);
     Route::get('/users/{id}', [UserController::class, 'show']);
     Route::put('/users/{id}', [UserController::class, 'update']);
@@ -39,33 +45,52 @@ Route::group(['middleware' => ['auth:sanctum', CheckAdmin::class]], function () 
     Route::put('/users/{id}/block', [UserController::class, 'blockUser']);
     Route::put('/users/{id}/unblock', [UserController::class, 'unblockUser']);
 
-    // Gestion des groupes (seulement pour admin)
-    Route::get('/groups', [GroupController::class, 'index']); // Lister les groupes
-    Route::post('/groups', [GroupController::class, 'store']); // Créer un groupe
-    Route::post('/groups/{id}/links', [GroupController::class, 'addLinks']); // Ajouter des liens
-    Route::delete('/groups/{id}/links', [GroupController::class, 'removeLink']); // Supprimer un lien
-    Route::delete('/groups/{id}', [GroupController::class, 'destroy']); // Supprimer un groupe
+    // Gestion des groupes
+    Route::get('/groups', [GroupController::class, 'index']);
+    Route::post('/groups', [GroupController::class, 'store']);
+    Route::post('/groups/{id}/links', [GroupController::class, 'addLinks']);
+    Route::delete('/groups/{id}/links', [GroupController::class, 'removeLink']);
+    Route::delete('/groups/{id}', [GroupController::class, 'destroy']);
     Route::put('/groups/{id}', [GroupController::class, 'update']);
 
-    // Gestion des requêtes (seulement pour admin)
+    // Gestion des requêtes
     Route::get('/requests', [RequestController::class, 'index']);
     Route::put('/requests/{id}/approve', [RequestController::class, 'approve']);
     Route::put('/requests/{id}/reject', [RequestController::class, 'reject']);
     Route::delete('/requests/{id}', [RequestController::class, 'destroy']);
+
+    // Routes d'administration
+    Route::get('/admin/users/count', [AdminController::class, 'getUserCount']);
+    Route::get('/admin/groups/count', [AdminController::class, 'getGroupCount']);
+    Route::get('/admin/requests/pending/count', [AdminController::class, 'getPendingRequestCount']);
 });
 
 // L'utilisateur peut créer une requête sans être admin
-
-
 Route::middleware(['auth:sanctum', CheckBlockedUser::class])->group(function () {
     Route::post('/requests', [RequestController::class, 'store']);
 });
 
+// Gestion des matières
+Route::middleware('auth:sanctum')->prefix('subjects')->group(function () {
+    Route::get('/', [SubjectController::class, 'index']);
+    Route::post('/', [SubjectController::class, 'store']);
+    Route::put('/{id}', [SubjectController::class, 'update']);
+    Route::delete('/{id}', [SubjectController::class, 'destroy']);
+});
 
+// Gestion des prédictions
+Route::prefix('predictions')->group(function () {
+    Route::post('/generate', [PredictionController::class, 'generate']);
+    Route::get('/strengths/{studentName}', [PredictionController::class, 'strengths']);
+});
 
+// Tableau de bord
+Route::middleware('auth:sanctum')->get('/dashboard', [DashboardController::class, 'index']);
 
-Route::middleware(['auth:sanctum', CheckAdmin::class])->group(function () {
-    Route::get('/admin/users/count', [AdminController::class, 'getUserCount']);
-    Route::get('/admin/groups/count', [AdminController::class, 'getGroupCount']);
-    Route::get('/admin/requests/pending/count', [AdminController::class, 'getPendingRequestCount']);
+// Gestion des groupes pour les utilisateurs connectés
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/groups/search', [GroupController::class, 'searchGroups']);
+    Route::get('/groups/recommended', [GroupController::class, 'recommendedGroups']);
+    Route::get('/groups/resources', [GroupController::class, 'sharedResources']);
+    Route::post('/groups/join/{id}', [GroupController::class, 'join']);
 });

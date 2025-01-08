@@ -13,7 +13,7 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         // Validation des données
-        $validatedData = $request->validate([
+        $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8|confirmed',
@@ -21,9 +21,9 @@ class AuthController extends Controller
 
         // Création de l'utilisateur avec le rôle "Student" par défaut
         $user = User::create([
-            'name' => $validatedData['name'],
-            'email' => $validatedData['email'],
-            'password' => Hash::make($validatedData['password']),
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => Hash::make($validated['password']),
             'role' => 'student', // Définit le rôle par défaut
         ]);
 
@@ -49,11 +49,16 @@ class AuthController extends Controller
         if (!Auth::attempt($request->only('email', 'password'))) {
             return response()->json(['message' => 'Invalid credentials'], 401);
         }
-        /** @var \App\Models\MyUserModel $user **/
+
+        /** @var \App\Models\User $user **/
         $user = Auth::user();
         $token = $user->createToken('auth_token')->plainTextToken;
 
-        return response()->json(['message' => 'Login successful', 'user' => $user, 'token' => $token]);
+        return response()->json([
+            'message' => 'Login successful',
+            'user' => $user,
+            'token' => $token,
+        ]);
     }
 
     // Méthode pour la déconnexion
@@ -61,6 +66,9 @@ class AuthController extends Controller
     {
         $request->user()->tokens()->delete();
 
-        return response()->json(['message' => 'Logout successful']);
+        return response()->json([
+            'message' => 'Logout successful',
+        ]);
     }
 }
+

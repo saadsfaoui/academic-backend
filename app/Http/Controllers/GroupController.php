@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Group;
+use App\Models\Prediction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -30,7 +31,7 @@ class GroupController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'links' => 'nullable|array',
-            'links.*' => 'url', // Chaque lien doit être une URL valide
+            'links.*' => 'url',
         ]);
 
         $group = Group::create([
@@ -56,7 +57,6 @@ class GroupController extends Controller
         ]);
 
         $group = Group::findOrFail($id);
-
         $currentLinks = $group->links ?? [];
         $group->links = array_merge($currentLinks, $validated['links']);
         $group->save();
@@ -76,7 +76,6 @@ class GroupController extends Controller
         ]);
 
         $group = Group::findOrFail($id);
-
         $currentLinks = $group->links ?? [];
         $group->links = array_filter($currentLinks, fn($l) => $l !== $validated['link']);
         $group->save();
@@ -96,35 +95,87 @@ class GroupController extends Controller
 
         return response()->json(['message' => 'Group deleted successfully']);
     }
+
+    // Mettre à jour un groupe
     public function update(Request $request, $id)
     {
-        // Vérifier si l'utilisateur est admin
         if (Auth::check() && Auth::user()->role !== 'admin') {
             return response()->json(['message' => 'Access denied. Only admins are allowed.'], 403);
         }
 
-        // Valider les données reçues
         $validated = $request->validate([
-            'name' => 'required|string|max:255', // Nom du groupe
-            'description' => 'nullable|string', // Description du groupe
-            'links' => 'nullable|array',        // Liens du groupe
-            'links.*' => 'url',                 // Chaque lien doit être une URL valide
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'links' => 'nullable|array',
+            'links.*' => 'url',
         ]);
 
-        // Rechercher le groupe par ID
         $group = Group::findOrFail($id);
-
-        // Mettre à jour les données du groupe
         $group->name = $validated['name'];
         $group->description = $validated['description'] ?? $group->description;
         $group->links = $validated['links'] ?? $group->links;
-
-        // Enregistrer les modifications
         $group->save();
 
         return response()->json([
             'message' => 'Group updated successfully.',
-            'group' => $group
+            'group' => $group,
         ], 200);
+    }
+
+    // Rechercher des groupes par mot-clé
+    public function searchGroups(Request $request)
+    {
+        $query = $request->input('query');
+        $groups = Group::inRandomOrder()
+            ->when($query, function ($queryBuilder) use ($query) {
+                return $queryBuilder->where('name', 'like', "%$query%");
+            })
+            ->get();
+
+        return response()->json($groups);
+    }
+
+    // Lister les groupes recommandés en fonction des prédictions faibles
+    public function recommendedGroups(Request $request)
+    {
+        $user = $request->user();
+        $weakSubjects = Prediction::where('student_name', $user->name)
+            ->where('predicted_score', '<', 60)
+            ->pluck('subject');
+
+        $recommendedGroups = Group::where(function ($query) use ($weakSubjects) {
+            foreach ($weakSubjects as $subject) {
+                $query->orWhere('name', 'like', "%$subject%");
+            }
+        })->get();
+
+        return response()->json($recommendedGroups);
+    }
+
+    // Lister toutes les ressources partagées
+    public function sharedResources()
+    {
+        $sharedResources = [
+            ['title' => 'Math Resources', 'description' => 'Learn algebra and calculus basics.'],
+            ['title' => 'Science Club Materials', 'description' => 'Discover fun experiments.'],
+            ['title' => 'History Discussions', 'description' => 'Explore ancient civilizations.'],
+        ];
+
+        return response()->json($sharedResources);
+    }
+
+    // Rejoindre un groupe
+    public function join(Request $request, $id)
+    {
+        $group = Group::findOrFail($id);
+        $user = $request->user();
+
+        if ($user->groups()->where('group_id', $id)->exists()) {
+            return response()->json(['message' => 'You are already a member of this group.'], 400);
+        }
+
+        $user->groups()->attach($group->id);
+
+        return response()->json(['message' => "You have successfully joined the group: $group->name"]);
     }
 }

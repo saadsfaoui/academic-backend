@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -46,13 +45,53 @@ class User extends Authenticatable
         'is_blocked' => 'boolean',
     ];
 
+    /**
+     * Check if the user is an admin.
+     *
+     * @return bool
+     */
+    public function isAdmin()
+    {
+        return $this->role === 'admin';
+    }
+
+    /**
+     * Define the many-to-many relationship with groups.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany
+     */
+    public function groups()
+    {
+        return $this->belongsToMany(Group::class, 'group_user');
+    }
+
+    /**
+     * Define the one-to-many relationship with requests.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
     public function requests()
     {
         return $this->hasMany(\App\Models\Request::class);
     }
 
-    public function isAdmin()
+    /**
+     * Define the one-to-many relationship with subjects.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function subjects()
     {
-        return $this->role === 'admin';
+        return $this->hasMany(Subject::class);
+    }
+
+    /**
+     * Define the one-to-many relationship with predictions.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function predictions()
+    {
+        return $this->hasMany(Prediction::class);
     }
 }
