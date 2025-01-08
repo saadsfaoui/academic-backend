@@ -2,23 +2,33 @@
 
 namespace App\Providers;
 
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
+use App\Models\Subject;
+use App\Observers\SubjectObserver;
 
 class AppServiceProvider extends ServiceProvider
 {
     /**
-     * Register any application services.
+     * Bootstrap any application services.
+     *
+     * @return void
      */
-    public function register(): void
+    public function boot()
     {
-        //
+        // Fix pour les clés longues
+        Schema::defaultStringLength(191);
+        Subject::observe(SubjectObserver::class);
     }
 
     /**
-     * Bootstrap any application services.
+     * Register any application services.
+     *
+     * @return void
      */
-    public function boot(): void
+    public function register()
     {
         //
     }
 }
+
