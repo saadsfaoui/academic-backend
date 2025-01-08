@@ -6,6 +6,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\GroupController;
 use App\Http\Controllers\RequestController;
 use App\Http\Controllers\AdminController;
+use App\Http\Middleware\CheckAdmin;
 use App\Http\Middleware\CheckBlockedUser;
 /*
 |--------------------------------------------------------------------------
@@ -29,7 +30,7 @@ Route::post('/auth/login', [AuthController::class, 'login']);
 Route::post('/auth/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
 
 // Routes protégées pour les utilisateurs et les groupes
-Route::group(['middleware' => ['auth:sanctum']], function () {
+Route::group(['middleware' => ['auth:sanctum', CheckAdmin::class]], function () {
     // Gestion des utilisateurs (seulement pour admin)
     Route::get('/users', [UserController::class, 'index']);
     Route::get('/users/{id}', [UserController::class, 'show']);
@@ -61,7 +62,9 @@ Route::middleware(['auth:sanctum', CheckBlockedUser::class])->group(function () 
 });
 
 
-Route::middleware(['auth:sanctum'])->group(function () {
+
+
+Route::middleware(['auth:sanctum', CheckAdmin::class])->group(function () {
     Route::get('/admin/users/count', [AdminController::class, 'getUserCount']);
     Route::get('/admin/groups/count', [AdminController::class, 'getGroupCount']);
     Route::get('/admin/requests/pending/count', [AdminController::class, 'getPendingRequestCount']);
