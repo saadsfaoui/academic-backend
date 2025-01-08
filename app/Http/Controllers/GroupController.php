@@ -136,7 +136,7 @@ class GroupController extends Controller
     }
 
     // Lister les groupes recommandés en fonction des prédictions faibles
-    public function recommendedGroups(Request $request)
+    /* public function recommendedGroups(Request $request)
     {
         $user = $request->user();
         $weakSubjects = Prediction::where('student_name', $user->name)
@@ -148,6 +148,22 @@ class GroupController extends Controller
                 $query->orWhere('name', 'like', "%$subject%");
             }
         })->get();
+
+        return response()->json($recommendedGroups);
+    }*/
+
+
+    public function recommendedGroups(Request $request)
+    {
+        $user = $request->user(); // Récupérer l'utilisateur connecté
+
+        // Récupérer les matières avec des prédictions faibles
+        $weakSubjects = Prediction::where('student_name', $user->name)
+            ->where('predicted_score', '<', 60)
+            ->pluck('subject');
+
+        // Récupérer les groupes recommandés basés sur les matières faibles
+        $recommendedGroups = Group::whereIn('name', $weakSubjects)->get();
 
         return response()->json($recommendedGroups);
     }
