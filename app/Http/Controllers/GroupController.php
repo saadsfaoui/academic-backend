@@ -136,7 +136,7 @@ class GroupController extends Controller
     }
 
     // Lister les groupes recommandés en fonction des prédictions faibles
-    /* public function recommendedGroups(Request $request)
+    /*public function recommendedGroups(Request $request)
     {
         $user = $request->user();
         $weakSubjects = Prediction::where('student_name', $user->name)
@@ -151,8 +151,6 @@ class GroupController extends Controller
 
         return response()->json($recommendedGroups);
     }*/
-
-
     public function recommendedGroups(Request $request)
     {
         $user = $request->user(); // Récupérer l'utilisateur connecté
@@ -167,6 +165,7 @@ class GroupController extends Controller
 
         return response()->json($recommendedGroups);
     }
+
 
     // Lister toutes les ressources partagées
     public function sharedResources()

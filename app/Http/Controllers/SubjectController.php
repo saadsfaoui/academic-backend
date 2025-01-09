@@ -110,5 +110,3 @@ class SubjectController extends Controller
         return response()->json(['message' => 'Subject and associated grade deleted'], 200);
     }
 }
-
-

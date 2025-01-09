@@ -11,7 +11,7 @@ use App\Http\Controllers\PredictionController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Middleware\CheckAdmin;
 use App\Http\Middleware\CheckBlockedUser;
-
+use App\Http\Controllers\ContactController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -71,6 +71,7 @@ Route::middleware(['auth:sanctum', CheckBlockedUser::class])->group(function () 
 });
 
 // Gestion des matières
+// Gestion des matières
 Route::middleware('auth:sanctum')->prefix('subjects')->group(function () {
     Route::get('/', [SubjectController::class, 'index']);
     Route::post('/', [SubjectController::class, 'store']);
@@ -79,13 +80,17 @@ Route::middleware('auth:sanctum')->prefix('subjects')->group(function () {
 });
 
 // Gestion des prédictions
-Route::prefix('predictions')->group(function () {
+Route::middleware('auth:sanctum')->prefix('predictions')->group(function () {
     Route::post('/generate', [PredictionController::class, 'generate']);
     Route::get('/strengths/{studentName}', [PredictionController::class, 'strengths']);
+    Route::get('/user', [PredictionController::class, 'getUserPredictions']); // Récupérer les prédictions de l'utilisateur connecté
+    Route::get('/overview', [PredictionController::class, 'getPredictionsOverview']); // Vue générale des prédictions
+
 });
 
 // Tableau de bord
 Route::middleware('auth:sanctum')->get('/dashboard', [DashboardController::class, 'index']);
+Route::middleware('auth:sanctum')->get('/dashboard/subjects-proportion', [DashboardController::class, 'getSubjectsProportion']);
 
 // Gestion des groupes pour les utilisateurs connectés
 Route::middleware('auth:sanctum')->group(function () {
@@ -94,3 +99,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/groups/resources', [GroupController::class, 'sharedResources']);
     Route::post('/groups/join/{id}', [GroupController::class, 'join']);
 });
+
+
+
+
+
+Route::post('/contact', [ContactController::class, 'sendContactMessage']);
