@@ -12,6 +12,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Middleware\CheckAdmin;
 use App\Http\Middleware\CheckBlockedUser;
 use App\Http\Controllers\ContactController;
+use Illuminate\Http\Request;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -108,5 +109,11 @@ Route::post('/contact', [ContactController::class, 'sendContactMessage']);
 
 
 Route::get('/groups/joined', [GroupController::class, 'joinedGroups']);
+Route::middleware('auth:sanctum')->get('/groups/recommended-joined', [GroupController::class, 'getRecommendedAndJoinedGroups']);
 
-Route::get('/groups/recommended-and-joined', [GroupController::class, 'getRecommendedAndJoinedGroups']);
+
+
+
+Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
+    return $request->user();
+});

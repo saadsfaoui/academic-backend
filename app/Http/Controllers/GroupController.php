@@ -8,8 +8,11 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
+
 class GroupController extends Controller
 {
+
+
     // Lister tous les groupes
     public function index()
     {
@@ -168,6 +171,7 @@ class GroupController extends Controller
 
         return response()->json($recommendedGroups);
     }*/
+
     public function recommendedGroups(Request $request)
     {
         $user = $request->user(); // Récupérer l'utilisateur connecté
@@ -222,28 +226,43 @@ class GroupController extends Controller
         return response()->json(['message' => "You have successfully joined the group: $group->name"]);
     }
 
+
+
+    //Modifié aujourdhui
     public function joinedGroups(Request $request)
     {
         $user = $request->user();
-        $joinedGroups = $user->groups; // Relations many-to-many avec les groupes
+        $joinedGroups = $joinedGroups = $user->groups()->select('id', 'name', 'description', 'links')->get();
+        // Relations many-to-many avec les groupes
         return response()->json($joinedGroups);
     }
 
-
+    //faut
 
     public function getRecommendedAndJoinedGroups(Request $request)
     {
         $user = $request->user(); // Récupérer l'utilisateur connecté
 
-        // Récupérer les groupes recommandés
-        $recommendedGroups = Group::whereIn('id', function ($query) use ($user) {
-            $query->select('group_id')
-                ->from('recommended_groups') // Table qui stocke les groupes recommandés
-                ->where('user_id', $user->id);
+        // Récupérer les matières faibles de l'utilisateur
+        $weakSubjects = DB::table('subjects')
+            ->where('user_id', $user->id)
+            ->where('score', '<', 60)
+            ->pluck('name')
+            ->toArray();
+
+        if (empty($weakSubjects)) {
+            return response()->json(['message' => 'No weak subjects found.'], 404);
+        }
+
+        // Récupérer les groupes recommandés basés sur les matières faibles
+        $recommendedGroups = Group::where(function ($query) use ($weakSubjects) {
+            foreach ($weakSubjects as $subject) {
+                $query->orWhere('name', 'like', "%$subject%");
+            }
         })->get();
 
-        // Récupérer les IDs des groupes déjà rejoints par l'utilisateur
-        $joinedGroupIds = $user->groups()->pluck('id')->toArray(); // Relation entre User et Group
+        // Récupérer les IDs des groupes déjà rejoints
+        $joinedGroupIds = $user->groups()->select('groups.id')->pluck('id')->toArray();
 
         // Ajouter une indication pour chaque groupe recommandé s'il est déjà rejoint
         $groups = $recommendedGroups->map(function ($group) use ($joinedGroupIds) {
@@ -251,6 +270,7 @@ class GroupController extends Controller
                 'id' => $group->id,
                 'name' => $group->name,
                 'description' => $group->description,
+                'links' => $group->links,
                 'is_joined' => in_array($group->id, $joinedGroupIds), // Vérifier si le groupe est rejoint
             ];
         });

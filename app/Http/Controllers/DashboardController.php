@@ -22,6 +22,11 @@ class DashboardController extends Controller
         $subjectsProportion = $this->getSubjectsProportion($user->id);
 
         return response()->json([
+            'user' => [
+                'name' => $user->name,
+                'email' => $user->email,
+
+            ],
             'strengths' => $strengths,
             'overall_performance' => $overallPerformance,
             'subjects_proportion' => $subjectsProportion,
