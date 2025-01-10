@@ -50,16 +50,33 @@ class RequestController extends Controller
 
     public function approve($id)
     {
+        // Vérifier si l'utilisateur connecté est admin
         if (Auth::check() && Auth::user()->role !== 'admin') {
             return response()->json(['message' => 'Access denied. Only admins are allowed.'], 403);
         }
 
+        // Récupérer la demande
         $request = \App\Models\Request::findOrFail($id);
+
+        // Marquer la demande comme approuvée
         $request->status = 'approved';
         $request->save();
 
-        return response()->json(['message' => 'Request approved successfully.', 'request' => $request]);
+        // Récupérer l'utilisateur et le groupe associés à la demande
+        $user = $request->user;
+        $group = $request->group;
+
+        // Ajouter l'utilisateur au groupe
+        if (!$user->groups()->where('group_id', $group->id)->exists()) {
+            $user->groups()->attach($group->id);
+        }
+
+        return response()->json([
+            'message' => 'Request approved successfully and user joined the group.',
+            'request' => $request
+        ]);
     }
+
 
     public function reject($id)
     {

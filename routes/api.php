@@ -105,3 +105,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
 
 Route::post('/contact', [ContactController::class, 'sendContactMessage']);
+
+
+Route::get('/groups/joined', [GroupController::class, 'joinedGroups']);
+
+Route::get('/groups/recommended-and-joined', [GroupController::class, 'getRecommendedAndJoinedGroups']);
