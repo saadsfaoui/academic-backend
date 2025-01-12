@@ -17,18 +17,26 @@ class ContactController extends Controller
         ]);
 
         // Adresse email de l'administrateur
-        $adminEmail = 'your_admin_email@example.com';
+        $adminEmail = 'example@gmail.com'; // Remplacez par votre email administrateur réel
 
-        // Envoyer l'email
-        Mail::send('emails.contact', [
-            'name' => $request->name,
-            'email' => $request->email,
-            'messageContent' => $request->message,
-        ], function ($message) use ($adminEmail) {
-            $message->to($adminEmail)
-                ->subject('Nouveau message de contact');
-        });
+        try {
+            // Envoyer l'email
+            Mail::send('emails.contact', [
+                'name' => $request->name,
+                'email' => $request->email,
+                'messageContent' => $request->message,
+            ], function ($message) use ($adminEmail) {
+                $message->to($adminEmail)
+                    ->subject('Nouveau message de contact');
+            });
 
-        return response()->json(['message' => 'Votre message a été envoyé avec succès.'], 200);
+            return response()->json(['message' => 'Votre message a été envoyé avec succès.'], 200);
+        } catch (\Exception $e) {
+            // Retourner une erreur si l'envoi échoue
+            return response()->json([
+                'error' => 'Une erreur est survenue lors de l\'envoi du message.',
+                'details' => $e->getMessage(),
+            ], 500);
+        }
     }
 }

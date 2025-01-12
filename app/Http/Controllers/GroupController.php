@@ -179,7 +179,7 @@ class GroupController extends Controller
         // Récupérer les matières avec des scores faibles (< 60) depuis la table 'subjects'
         $weakSubjects = DB::table('subjects')
             ->where('user_id', $user->id)
-            ->where('score', '<', 60)
+            ->where('score', '<', 13)
             ->pluck('name')
             ->toArray();
 
@@ -246,7 +246,7 @@ class GroupController extends Controller
         // Récupérer les matières faibles de l'utilisateur
         $weakSubjects = DB::table('subjects')
             ->where('user_id', $user->id)
-            ->where('score', '<', 60)
+            ->where('score', '<', 13)
             ->pluck('name')
             ->toArray();
 

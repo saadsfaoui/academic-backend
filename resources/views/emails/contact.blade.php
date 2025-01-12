@@ -2,11 +2,11 @@
 <html>
 
 <head>
-    <title>Message de Contact</title>
+    <title>Nouveau Message de Contact</title>
 </head>
 
 <body>
-    <h1>Nouveau Message de Contact</h1>
+    <h2>Nouveau Message de Contact</h2>
     <p><strong>Nom :</strong> {{ $name }}</p>
     <p><strong>Email :</strong> {{ $email }}</p>
     <p><strong>Message :</strong></p>
